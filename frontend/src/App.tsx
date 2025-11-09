@@ -75,6 +75,7 @@ function App() {
 			createFloor(index + 1)
 		)
 	);
+	const floorsRef = useRef<Floor[]>(floors);
 	const rackCounterRef = useRef(1);
 	const technicianCounterRef = useRef(1);
 	const [placementMode, setPlacementMode] = useState<PlacementMode>("rack");
@@ -123,6 +124,62 @@ function App() {
 			return current.slice(0, config.floors);
 		});
 	}, [config.floors]);
+
+	useEffect(() => {
+		floorsRef.current = floors;
+	}, [floors]);
+
+	useEffect(() => {
+		const sendDistances = async () => {
+			const snapshot = floorsRef.current;
+			const technicians = snapshot.flatMap((floor) =>
+				floor.technicians.map((technician) => ({
+					...technician,
+					floor: floor.level,
+				}))
+			);
+			const racks = snapshot.flatMap((floor) =>
+				floor.racks.map((rack) => ({
+					...rack,
+					floor: floor.level,
+				}))
+			);
+			const distanceMatrix = technicians.map((technician) =>
+				racks.map((rack) => {
+					const floorDiff = technician.floor - rack.floor;
+					const rowDiff = technician.row - rack.row;
+					const columnDiff = technician.column - rack.column;
+
+					return Math.sqrt(
+						floorDiff * floorDiff + rowDiff * rowDiff + columnDiff * columnDiff
+					);
+				})
+			);
+
+			try {
+				console.log(distanceMatrix);
+				await fetch("https://hackutd-12-production.up.railway.app/distance", {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+					},
+					body: JSON.stringify(distanceMatrix),
+				});
+			} catch (error) {
+				console.error("Failed to send distance matrix", error);
+			}
+		};
+
+		const intervalId = window.setInterval(() => {
+			void sendDistances();
+		}, 1000);
+
+		void sendDistances();
+
+		return () => {
+			window.clearInterval(intervalId);
+		};
+	}, []);
 
 	useEffect(() => {
 		setRackForm((previous) => ({
