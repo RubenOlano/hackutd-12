@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Optional, List
+from typing import Optional, List, Literal
 
 
 # Location model for technician coordinates
@@ -52,13 +52,12 @@ class JiraTicketListResponse(BaseModel):
 
 
 class JiraStatusUpdate(BaseModel):
-    status: str = Field(
-        description="The new status name (e.g., 'In Progress', 'Done')"
-    )
+    status: str = Field(description="The new status name (e.g., 'In Progress', 'Done')")
 
 
 class JiraComment(BaseModel):
-    comment: str = Field(
-        min_length=1,
-        description="The comment text to add"
-    )
+    comment: str = Field(min_length=1, description="The comment text to add")
+
+
+class TechnicianEvents(BaseModel):
+    _type: Literal["online"]
